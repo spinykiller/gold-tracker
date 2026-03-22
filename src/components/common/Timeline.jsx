@@ -7,6 +7,9 @@ const actionIcons = {
   photo_updated: 'photo_camera',
   comment_updated: 'edit_note',
   status_changed: 'swap_horiz',
+  edited: 'edit',
+  delete_requested: 'delete',
+  delete_cancelled: 'cancel',
 };
 
 export default function Timeline({ itemId }) {
@@ -37,7 +40,9 @@ export default function Timeline({ itemId }) {
                 className={`material-symbols-outlined text-sm ${isVerified ? 'text-on-primary' : 'text-primary-fixed-dim'}`}
                 style={isVerified ? {fontVariationSettings: "'FILL' 1"} : undefined}
               >
-                {actionIcons[log.action] || 'info'}
+                {log.action === 'status_changed'
+                  ? (log.details?.newStatus === 'missing' ? 'flag' : 'check_circle')
+                  : (actionIcons[log.action] || 'info')}
               </span>
             </div>
             <div>
@@ -46,7 +51,17 @@ export default function Timeline({ itemId }) {
                 {log.action === 'verified' && `Verified by ${member?.name || 'Unknown'}`}
                 {log.action === 'photo_updated' && `Photo Updated by ${member?.name || 'Unknown'}`}
                 {log.action === 'comment_updated' && `Comment by ${member?.name || 'Unknown'}`}
-                {log.action === 'status_changed' && `Status Changed by ${member?.name || 'Unknown'}`}
+                {log.action === 'status_changed' && (
+                  log.details?.newStatus === 'missing'
+                    ? `Marked as Missing by ${member?.name || 'Unknown'}`
+                    : log.details?.newStatus === 'active'
+                      ? `Marked as Found by ${member?.name || 'Unknown'}`
+                      : `Status Changed by ${member?.name || 'Unknown'}`
+                )}
+                {log.action === 'edited' && `Edited by ${member?.name || 'Unknown'}`}
+                {log.action === 'delete_requested' && `Deletion requested by ${member?.name || 'Unknown'}`}
+                {log.action === 'delete_cancelled' && `Deletion cancelled by ${member?.name || 'Unknown'}`}
+                {log.action === 'deleted' && `Deleted by ${member?.name || 'Unknown'}`}
               </p>
               {log.details?.comment && (
                 <p className="text-on-surface-variant text-sm">{log.details.comment}</p>

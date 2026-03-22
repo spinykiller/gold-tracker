@@ -1,19 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../lib/db';
 import { blobToUrl } from '../../lib/photos';
 import Badge from '../common/Badge';
 
 export default function ItemCard({ item }) {
   const [thumbUrl, setThumbUrl] = useState(null);
+  const firstPhoto = useLiveQuery(
+    () => db.itemPhotos.where('itemId').equals(item.id).first(),
+    [item.id]
+  );
 
   useEffect(() => {
-    const blob = item.photoThumb || item.photo;
+    const blob = firstPhoto?.thumb || firstPhoto?.photo;
     if (blob) {
       const url = blobToUrl(blob);
       setThumbUrl(url);
       return () => URL.revokeObjectURL(url);
     }
-  }, [item]);
+    setThumbUrl(null);
+  }, [firstPhoto]);
 
   const weightColor = {
     gold: 'text-primary-fixed-dim',

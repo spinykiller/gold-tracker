@@ -8,13 +8,25 @@ export default function Home({ memberId }) {
   const items = useLiveQuery(() => db.items.toArray());
   const logs = useLiveQuery(() => db.logs.orderBy('createdAt').reverse().limit(5).toArray());
   const members = useLiveQuery(() => db.members.toArray());
+  const pendingDeletes = useLiveQuery(() => db.deleteRequests.where('status').equals('pending').toArray());
   const { schedule } = useReconciliation();
 
-  if (!items || !logs || !members) return null;
+  if (!items || !logs || !members || !pendingDeletes) return null;
 
   const activeItems = items.filter((i) => i.status === 'active');
   const goldWeight = activeItems.filter((i) => i.metalType === 'gold').reduce((s, i) => s + (i.weightGrams || 0), 0);
   const silverWeight = activeItems.filter((i) => i.metalType === 'silver').reduce((s, i) => s + (i.weightGrams || 0), 0);
+
+  // Aggregate stones across all active items
+  const allStones = activeItems.flatMap((i) => i.stones || []);
+  const diamondStones = allStones.filter((s) => s.type === 'diamond');
+  const preciousStones = allStones.filter((s) => s.type === 'precious');
+  const semiPreciousStones = allStones.filter((s) => s.type === 'semiprecious');
+  const artificialStones = allStones.filter((s) => s.type === 'artificial');
+  const diamondCarats = diamondStones.reduce((s, st) => s + (st.weightCarat || 0), 0);
+  const preciousCarats = preciousStones.reduce((s, st) => s + (st.weightCarat || 0), 0);
+  const semiPreciousCarats = semiPreciousStones.reduce((s, st) => s + (st.weightCarat || 0), 0);
+  const artificialCarats = artificialStones.reduce((s, st) => s + (st.weightCarat || 0), 0);
   const getMember = (id) => members.find((m) => m.id === id);
 
   const actionLabels = {
@@ -23,6 +35,10 @@ export default function Home({ memberId }) {
     photo_updated: 'Photo Updated',
     status_changed: 'Status Changed',
     comment_updated: 'Comment Updated',
+    edited: 'Edited',
+    delete_requested: 'Delete Requested',
+    delete_cancelled: 'Delete Cancelled',
+    deleted: 'Deleted',
   };
 
   return (
@@ -63,6 +79,42 @@ export default function Home({ memberId }) {
               </div>
             </div>
           </div>
+          {(diamondStones.length > 0 || preciousStones.length > 0 || semiPreciousStones.length > 0 || artificialStones.length > 0) && (
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-3 border border-white/5">
+                <p className="text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">Diamonds</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold font-headline text-on-surface">{diamondStones.length}</span>
+                  <span className="text-[10px] text-on-surface-variant">pcs</span>
+                </div>
+                {diamondCarats > 0 && <p className="text-[10px] text-on-surface-variant mt-0.5">{diamondCarats.toFixed(2)} ct</p>}
+              </div>
+              <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-3 border border-white/5">
+                <p className="text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">Precious</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold font-headline text-on-surface">{preciousStones.length}</span>
+                  <span className="text-[10px] text-on-surface-variant">pcs</span>
+                </div>
+                {preciousCarats > 0 && <p className="text-[10px] text-on-surface-variant mt-0.5">{preciousCarats.toFixed(2)} ct</p>}
+              </div>
+              <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-3 border border-white/5">
+                <p className="text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">Semi-Precious</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold font-headline text-on-surface">{semiPreciousStones.length}</span>
+                  <span className="text-[10px] text-on-surface-variant">pcs</span>
+                </div>
+                {semiPreciousCarats > 0 && <p className="text-[10px] text-on-surface-variant mt-0.5">{semiPreciousCarats.toFixed(2)} ct</p>}
+              </div>
+              <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-3 border border-white/5">
+                <p className="text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">Artificial</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-bold font-headline text-on-surface">{artificialStones.length}</span>
+                  <span className="text-[10px] text-on-surface-variant">pcs</span>
+                </div>
+                {artificialCarats > 0 && <p className="text-[10px] text-on-surface-variant mt-0.5">{artificialCarats.toFixed(2)} ct</p>}
+              </div>
+            </div>
+          )}
           <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[16px] text-primary-fixed-dim">inventory_2</span>
@@ -91,6 +143,37 @@ export default function Home({ memberId }) {
             </div>
             <span className="material-symbols-outlined text-on-surface-variant/40">chevron_right</span>
           </button>
+        </section>
+      )}
+
+      {pendingDeletes.filter(d => d.requestedBy !== memberId).length > 0 && (
+        <section className="space-y-4">
+          <h3 className="font-headline font-bold text-xl text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-error">delete_sweep</span>
+            Pending Deletions
+          </h3>
+          {pendingDeletes.filter(d => d.requestedBy !== memberId).map((req) => {
+            const reqItem = items.find(i => i.id === req.itemId);
+            if (!reqItem) return null;
+            return (
+              <button
+                key={req.id}
+                onClick={() => navigate(`/items/${req.itemId}`)}
+                className="w-full bg-error/5 rounded-xl p-4 flex items-center gap-4 border border-error/20 text-left hover:bg-error/10 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-lg bg-error/10 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-error">delete</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-on-surface">{reqItem.name}</p>
+                  <p className="text-[10px] text-on-surface-variant">
+                    {getMember(req.requestedBy)?.name || 'Unknown'} requested deletion -- tap to review
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-on-surface-variant/40">chevron_right</span>
+              </button>
+            );
+          })}
         </section>
       )}
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/db';
 import { blobToUrl } from '../../lib/photos';
 import Badge from '../common/Badge';
@@ -6,15 +7,20 @@ import Badge from '../common/Badge';
 export default function VerifyItem({ item, reconId, memberId }) {
   const [comment, setComment] = useState('');
   const [photoUrl, setPhotoUrl] = useState(null);
+  const firstPhoto = useLiveQuery(
+    () => db.itemPhotos.where('itemId').equals(item.id).first(),
+    [item.id]
+  );
 
   useEffect(() => {
-    const blob = item.photo || item.photoThumb;
+    const blob = firstPhoto?.thumb || firstPhoto?.photo;
     if (blob) {
       const url = blobToUrl(blob);
       setPhotoUrl(url);
       return () => URL.revokeObjectURL(url);
     }
-  }, [item]);
+    setPhotoUrl(null);
+  }, [firstPhoto]);
 
   const verify = async (isVerified) => {
     const now = new Date().toISOString();
@@ -35,6 +41,13 @@ export default function VerifyItem({ item, reconId, memberId }) {
     });
     if (!isVerified) {
       await db.items.update(item.id, { status: 'missing' });
+      await db.logs.add({
+        itemId: item.id,
+        action: 'status_changed',
+        performedBy: memberId,
+        details: { oldStatus: item.status, newStatus: 'missing' },
+        createdAt: now,
+      });
     }
     setComment('');
   };

@@ -10,6 +10,7 @@ import Items from './pages/Items';
 import AddItem from './pages/AddItem';
 import ItemDetailPage from './pages/ItemDetailPage';
 import Reconcile from './pages/Reconcile';
+import EditItem from './pages/EditItem';
 import Settings from './pages/Settings';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="items" element={<Items />} />
           <Route path="add" element={<AddItem memberId={memberId} />} />
           <Route path="items/:id" element={<ItemDetailPage memberId={memberId} />} />
+          <Route path="items/:id/edit" element={<EditItem memberId={memberId} />} />
           <Route path="reconcile" element={<Reconcile memberId={memberId} />} />
           <Route path="settings" element={<Settings memberId={memberId} />} />
         </Route>

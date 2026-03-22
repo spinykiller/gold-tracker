@@ -25,10 +25,21 @@ export function blobToUrl(blob) {
   return URL.createObjectURL(blob);
 }
 
-export function blobToBase64(blob) {
-  return new Promise((resolve) => {
+export function blobToBase64(data) {
+  return new Promise((resolve, reject) => {
+    let blob = data;
+    if (data instanceof ArrayBuffer) {
+      blob = new Blob([data]);
+    } else if (ArrayBuffer.isView(data)) {
+      blob = new Blob([data.buffer]);
+    }
+    if (!(blob instanceof Blob)) {
+      resolve(null);
+      return;
+    }
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
+    reader.onerror = () => resolve(null);
     reader.readAsDataURL(blob);
   });
 }
