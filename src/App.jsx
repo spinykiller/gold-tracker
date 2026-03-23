@@ -41,7 +41,7 @@ export default function App() {
           <Route path="items/:id" element={<ItemDetailPage memberId={memberId} />} />
           <Route path="items/:id/edit" element={<EditItem memberId={memberId} />} />
           <Route path="reconcile" element={<Reconcile memberId={memberId} />} />
-          <Route path="settings" element={<Settings memberId={memberId} />} />
+          <Route path="settings" element={<Settings memberId={memberId} onLogout={logout} />} />
         </Route>
       </Routes>
     </HashRouter>

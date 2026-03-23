@@ -129,13 +129,33 @@ db.version(7).stores({
   logs: '++id, itemId, action, performedBy, createdAt',
 });
 
+// v8: admin role for members (marks "Me" as admin for existing installs)
+db.version(8).stores({
+  members: '++id, name',
+  items: '++id, name, metalType, registeredBy, registeredAt, status',
+  itemPhotos: '++id, itemId',
+  deleteRequests: '++id, itemId, requestedBy, status',
+  schedules: '++id, frequency, nextDueAt',
+  reconciliations: '++id, startedAt, completedAt, status',
+  verifications: '++id, reconciliationId, itemId, verifiedBy, verifiedAt',
+  logs: '++id, itemId, action, performedBy, createdAt',
+}).upgrade(tx => {
+  return tx.table('members').toCollection().modify(member => {
+    if (member.name === 'Me') {
+      member.isAdmin = true;
+    } else if (member.isAdmin === undefined) {
+      member.isAdmin = false;
+    }
+  });
+});
+
 export async function seedMembers() {
   const count = await db.members.count();
   if (count === 0) {
     await db.members.bulkAdd([
       { name: 'Dad', avatar: 'D' },
       { name: 'Mom', avatar: 'M' },
-      { name: 'Me', avatar: 'Y' },
+      { name: 'Me', avatar: 'Y', isAdmin: true },
       { name: 'Wife', avatar: 'W' },
     ]);
   }

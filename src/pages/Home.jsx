@@ -16,6 +16,7 @@ export default function Home({ memberId }) {
   const activeItems = items.filter((i) => i.status === 'active');
   const goldWeight = activeItems.filter((i) => i.metalType === 'gold').reduce((s, i) => s + (i.weightGrams || 0), 0);
   const silverWeight = activeItems.filter((i) => i.metalType === 'silver').reduce((s, i) => s + (i.weightGrams || 0), 0);
+  const platinumWeight = activeItems.filter((i) => i.metalType === 'platinum').reduce((s, i) => s + (i.weightGrams || 0), 0);
 
   // Aggregate stones across all active items
   const allStones = activeItems.flatMap((i) => i.stones || []);
@@ -63,19 +64,26 @@ export default function Home({ memberId }) {
               <span className="material-symbols-outlined text-primary-container text-3xl">account_balance_wallet</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-4 border border-white/5">
               <p className="text-[10px] uppercase tracking-wider text-on-surface-variant mb-2">Gold Reserve</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-bold font-headline text-primary">{goldWeight.toFixed(1)}</span>
-                <span className="text-xs font-medium text-on-surface-variant">grams</span>
+                <span className="text-xs font-medium text-on-surface-variant">g</span>
               </div>
             </div>
             <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-4 border border-white/5">
               <p className="text-[10px] uppercase tracking-wider text-on-surface-variant mb-2">Silver Reserve</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-bold font-headline text-secondary">{silverWeight.toFixed(1)}</span>
-                <span className="text-xs font-medium text-on-surface-variant">grams</span>
+                <span className="text-xs font-medium text-on-surface-variant">g</span>
+              </div>
+            </div>
+            <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-4 border border-white/5">
+              <p className="text-[10px] uppercase tracking-wider text-on-surface-variant mb-2">Platinum Reserve</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold font-headline text-tertiary">{platinumWeight.toFixed(1)}</span>
+                <span className="text-xs font-medium text-on-surface-variant">g</span>
               </div>
             </div>
           </div>

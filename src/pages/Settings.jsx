@@ -2,7 +2,7 @@ import ScheduleForm from '../components/settings/ScheduleForm';
 import ExportImport from '../components/settings/ExportImport';
 import MemberManager from '../components/settings/MemberManager';
 
-export default function Settings({ memberId }) {
+export default function Settings({ memberId, onLogout }) {
   return (
     <main className="max-w-screen-xl mx-auto px-6 pt-12 pb-32 space-y-20">
       <section className="space-y-6">
@@ -26,11 +26,21 @@ export default function Settings({ memberId }) {
           <ScheduleForm memberId={memberId} />
         </div>
         <div className="md:col-span-7">
-          <MemberManager />
+          <MemberManager currentMemberId={memberId} />
         </div>
       </section>
 
       <ExportImport />
+
+      <section className="flex justify-center">
+        <button
+          onClick={onLogout}
+          className="flex items-center gap-2 px-8 py-3 rounded-xl bg-error/10 text-error font-bold text-sm uppercase tracking-widest hover:bg-error/20 transition-colors"
+        >
+          <span className="material-symbols-outlined text-lg">logout</span>
+          Switch Profile
+        </button>
+      </section>
     </main>
   );
 }

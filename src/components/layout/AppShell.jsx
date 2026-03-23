@@ -2,7 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import MemberAvatar from '../common/MemberAvatar';
 
-export default function AppShell({ currentMember }) {
+export default function AppShell({ currentMember, onLogout }) {
   const location = useLocation();
   const isDetail = location.pathname.includes('/items/');
 
@@ -14,9 +14,9 @@ export default function AppShell({ currentMember }) {
           <span className="font-[Manrope] font-semibold tracking-tight text-lg text-on-surface/80">{currentMember?.name || ''}</span>
         </div>
         <div className="text-xl font-bold tracking-[0.1em] text-primary-container uppercase font-headline">Aureum Heritage</div>
-        <div className="p-2 hover:bg-surface-container-high transition-colors duration-300 rounded-full cursor-pointer">
-          <span className="material-symbols-outlined text-primary-container">account_circle</span>
-        </div>
+        <button onClick={onLogout} className="p-2 hover:bg-surface-container-high transition-colors duration-300 rounded-full cursor-pointer" title="Switch profile">
+          <span className="material-symbols-outlined text-primary-container">logout</span>
+        </button>
       </header>
       <Outlet />
       <BottomNav />

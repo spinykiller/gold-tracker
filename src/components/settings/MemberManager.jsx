@@ -5,7 +5,7 @@ import { compressImage } from '../../lib/photos';
 import MemberAvatar from '../common/MemberAvatar';
 import { hashPin, verifyPin, isBiometricAvailable, registerBiometric } from '../../lib/auth';
 
-export default function MemberManager() {
+export default function MemberManager({ currentMemberId }) {
   const members = useLiveQuery(() => db.members.toArray());
   const [newName, setNewName] = useState('');
   const [editing, setEditing] = useState(null);
@@ -24,6 +24,9 @@ export default function MemberManager() {
 
   if (!members) return null;
 
+  const currentMember = members.find(m => m.id === currentMemberId);
+  const isAdmin = currentMember?.isAdmin === true;
+
   const addMember = async () => {
     if (!newName.trim()) return;
     await db.members.add({ name: newName.trim(), avatar: newName.trim()[0].toUpperCase() });
@@ -34,6 +37,21 @@ export default function MemberManager() {
     if (!editName.trim()) return;
     await db.members.update(id, { name: editName.trim(), avatar: editName.trim()[0].toUpperCase() });
     setEditing(null);
+  };
+
+  const toggleAdmin = async (id) => {
+    const member = members.find(m => m.id === id);
+    if (!member) return;
+    await db.members.update(id, { isAdmin: !member.isAdmin });
+  };
+
+  const deleteMember = async (id) => {
+    const itemCount = await db.items.where('registeredBy').equals(id).count();
+    const msg = itemCount > 0
+      ? `This member has ${itemCount} item(s) registered. Delete anyway?`
+      : 'Delete this member?';
+    if (!window.confirm(msg)) return;
+    await db.members.delete(id);
   };
 
   const handleProfilePhoto = async (id, file) => {
@@ -147,20 +165,41 @@ export default function MemberManager() {
                   <div>
                     <p className="font-bold text-on-surface">{m.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
+                      {m.isAdmin && <span className="text-[10px] text-primary uppercase tracking-wider font-bold">Admin</span>}
                       {m.pinHash && <span className="text-[10px] text-primary-container uppercase tracking-wider font-bold">PIN</span>}
                       {m.webauthnCredentialId && <span className="text-[10px] text-primary-container uppercase tracking-wider font-bold">Biometric</span>}
                     </div>
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => { setEditing(m.id); setEditName(m.name); }}
-                className="text-on-surface-variant/40 hover:text-primary"
-              >
-                <span className="material-symbols-outlined">edit_note</span>
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => { setEditing(m.id); setEditName(m.name); }}
+                  className="text-on-surface-variant/40 hover:text-primary"
+                >
+                  <span className="material-symbols-outlined">edit_note</span>
+                </button>
+                {isAdmin && m.id !== currentMemberId && (
+                  <>
+                    <button
+                      onClick={() => toggleAdmin(m.id)}
+                      title={m.isAdmin ? 'Remove admin' : 'Make admin'}
+                      className={`text-on-surface-variant/40 ${m.isAdmin ? 'hover:text-error' : 'hover:text-primary'}`}
+                    >
+                      <span className="material-symbols-outlined">{m.isAdmin ? 'admin_panel_settings' : 'shield_person'}</span>
+                    </button>
+                    <button
+                      onClick={() => deleteMember(m.id)}
+                      className="text-on-surface-variant/40 hover:text-error"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
+            {m.id === currentMemberId && (
             <div className="px-5 pb-4 flex flex-wrap gap-2">
               {!m.pinHash ? (
                 <button
@@ -205,6 +244,7 @@ export default function MemberManager() {
                 )
               )}
             </div>
+            )}
           </div>
         ))}
       </div>
