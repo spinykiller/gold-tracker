@@ -14,6 +14,7 @@ export default function Home({ memberId }) {
   if (!items || !logs || !members || !pendingDeletes) return null;
 
   const activeItems = items.filter((i) => i.status === 'active');
+  const missingItems = items.filter((i) => i.status === 'missing');
   const goldWeight = activeItems.filter((i) => i.metalType === 'gold').reduce((s, i) => s + (i.weightGrams || 0), 0);
   const silverWeight = activeItems.filter((i) => i.metalType === 'silver').reduce((s, i) => s + (i.weightGrams || 0), 0);
   const platinumWeight = activeItems.filter((i) => i.metalType === 'platinum').reduce((s, i) => s + (i.weightGrams || 0), 0);
@@ -131,6 +132,33 @@ export default function Home({ memberId }) {
           </div>
         </div>
       </section>
+
+      {missingItems.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="font-headline font-bold text-xl text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-error">warning</span>
+            Missing Items ({missingItems.length})
+          </h3>
+          {missingItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => navigate(`/items/${item.id}`)}
+              className="w-full bg-error/5 rounded-xl p-4 flex items-center gap-4 border border-error/20 text-left hover:bg-error/10 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-lg bg-error/10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-error">search_off</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-on-surface">{item.name}</p>
+                <p className="text-[10px] text-on-surface-variant">
+                  {item.weightGrams ? `${item.weightGrams}g` : ''} {item.metalType ? item.metalType.charAt(0).toUpperCase() + item.metalType.slice(1) : ''} -- flagged during reconciliation
+                </p>
+              </div>
+              <span className="material-symbols-outlined text-on-surface-variant/40">chevron_right</span>
+            </button>
+          ))}
+        </section>
+      )}
 
       {schedule && (
         <section>
