@@ -40,6 +40,7 @@ export default function Home({ memberId }) {
     edited: 'Edited',
     delete_requested: 'Delete Requested',
     delete_cancelled: 'Delete Cancelled',
+    delete_rejected: 'Delete Rejected',
     deleted: 'Deleted',
   };
 
@@ -182,13 +183,13 @@ export default function Home({ memberId }) {
         </section>
       )}
 
-      {pendingDeletes.filter(d => d.requestedBy !== memberId).length > 0 && (
+      {pendingDeletes.filter(d => d.requestedBy !== memberId && !(d.approvals || []).includes(memberId)).length > 0 && (
         <section className="space-y-4">
           <h3 className="font-headline font-bold text-xl text-on-surface flex items-center gap-2">
             <span className="material-symbols-outlined text-error">delete_sweep</span>
             Pending Deletions
           </h3>
-          {pendingDeletes.filter(d => d.requestedBy !== memberId).map((req) => {
+          {pendingDeletes.filter(d => d.requestedBy !== memberId && !(d.approvals || []).includes(memberId)).map((req) => {
             const reqItem = items.find(i => i.id === req.itemId);
             if (!reqItem) return null;
             return (

@@ -86,6 +86,7 @@ export default function ItemDetail({ memberId }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const itemId = Number(id);
+  const [showHistory, setShowHistory] = useState(false);
   const item = useLiveQuery(() => db.items.get(itemId), [itemId]);
   const photos = useLiveQuery(() => db.itemPhotos.where('itemId').equals(itemId).sortBy('order'), [itemId]);
   const members = useLiveQuery(() => db.members.toArray());
@@ -133,12 +134,12 @@ export default function ItemDetail({ memberId }) {
   const handleApproveDelete = async () => {
     if (!pendingDelete) return;
     const now = new Date().toISOString();
-    // Add this member's approval
     const approvals = [...(pendingDelete.approvals || []), memberId];
     await db.deleteRequests.update(pendingDelete.id, { approvals });
 
-    // 1 approval from a different member is enough
-    if (approvals.length >= 1) {
+    // All members except the requester must approve
+    const requiredApprovals = members.filter(m => m.id !== pendingDelete.requestedBy).length;
+    if (approvals.length >= requiredApprovals) {
       await db.deleteRequests.update(pendingDelete.id, { status: 'approved' });
       await db.items.delete(itemId);
       await db.itemPhotos.where('itemId').equals(itemId).delete();
@@ -151,6 +152,19 @@ export default function ItemDetail({ memberId }) {
       });
       navigate('/items');
     }
+  };
+
+  const handleRejectDelete = async () => {
+    if (!pendingDelete) return;
+    const now = new Date().toISOString();
+    await db.deleteRequests.update(pendingDelete.id, { status: 'rejected' });
+    await db.logs.add({
+      itemId,
+      action: 'delete_rejected',
+      performedBy: memberId,
+      details: { name: item.name },
+      createdAt: now,
+    });
   };
 
   const handleCancelDelete = async () => {
@@ -184,7 +198,7 @@ export default function ItemDetail({ memberId }) {
       </section>
 
       <div className="px-6 grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-7 space-y-8">
+        <div className="md:col-span-7">
           <div className="bg-surface-container-low rounded-xl p-8 shadow-2xl">
             <h2 className="text-primary-container font-headline font-bold uppercase tracking-widest text-xs mb-6">Asset Specification</h2>
             <div className="space-y-6">
@@ -250,14 +264,9 @@ export default function ItemDetail({ memberId }) {
               </div>
             </div>
           </div>
-
-          <div className="bg-surface-container-low rounded-xl p-8 shadow-2xl">
-            <h2 className="text-primary-container font-headline font-bold uppercase tracking-widest text-xs mb-8">Verification History</h2>
-            <Timeline itemId={itemId} />
-          </div>
         </div>
 
-        <div className="md:col-span-5 space-y-6">
+        <div className="md:col-span-5 md:row-span-2">
           <div className="bg-surface-container-high rounded-xl p-6 border border-outline-variant/10 shadow-xl md:sticky md:top-24">
             <h3 className="text-on-surface font-headline font-bold text-lg mb-6">Manage Asset</h3>
             <div className="flex flex-col gap-4">
@@ -310,6 +319,14 @@ export default function ItemDetail({ memberId }) {
                   <p className="text-on-surface-variant text-xs">
                     Requested by <span className="font-bold text-on-surface">{getMember(pendingDelete.requestedBy)?.name || 'Unknown'}</span>
                   </p>
+                  <p className="text-on-surface-variant text-xs">
+                    Approvals: <span className="font-bold text-on-surface">{(pendingDelete.approvals || []).length} / {members.filter(m => m.id !== pendingDelete.requestedBy).length}</span>
+                  </p>
+                  {(pendingDelete.approvals || []).length > 0 && (
+                    <p className="text-on-surface-variant text-xs">
+                      Approved by: {(pendingDelete.approvals || []).map(id => getMember(id)?.name || 'Unknown').join(', ')}
+                    </p>
+                  )}
                   {pendingDelete.requestedBy === memberId ? (
                     <button
                       onClick={handleCancelDelete}
@@ -318,18 +335,46 @@ export default function ItemDetail({ memberId }) {
                       <span className="material-symbols-outlined text-sm">close</span>
                       Cancel Request
                     </button>
+                  ) : (pendingDelete.approvals || []).includes(memberId) ? (
+                    <p className="text-center text-on-surface-variant text-xs font-semibold py-2">You have approved this request</p>
                   ) : (
-                    <button
-                      onClick={handleApproveDelete}
-                      className="w-full bg-error text-on-error font-headline font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 text-sm"
-                    >
-                      <span className="material-symbols-outlined text-sm">check</span>
-                      Approve Deletion
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleApproveDelete}
+                        className="flex-1 bg-error text-on-error font-headline font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 text-sm"
+                      >
+                        <span className="material-symbols-outlined text-sm">check</span>
+                        Approve
+                      </button>
+                      <button
+                        onClick={handleRejectDelete}
+                        className="flex-1 bg-surface-container-highest text-on-surface font-headline font-semibold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-surface-bright transition-all active:scale-95 border border-outline-variant/30 text-sm"
+                      >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                        Reject
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-7">
+          <div className="bg-surface-container-low rounded-xl shadow-2xl">
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className="w-full p-8 flex items-center justify-between text-left"
+            >
+              <h2 className="text-primary-container font-headline font-bold uppercase tracking-widest text-xs">Verification History</h2>
+              <span className={`material-symbols-outlined text-primary-container transition-transform ${showHistory ? 'rotate-180' : ''}`}>expand_more</span>
+            </button>
+            {showHistory && (
+              <div className="px-8 pb-8">
+                <Timeline itemId={itemId} />
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ const actionIcons = {
   edited: 'edit',
   delete_requested: 'delete',
   delete_cancelled: 'cancel',
+  delete_rejected: 'block',
 };
 
 export default function Timeline({ itemId }) {
@@ -61,6 +62,7 @@ export default function Timeline({ itemId }) {
                 {log.action === 'edited' && `Edited by ${member?.name || 'Unknown'}`}
                 {log.action === 'delete_requested' && `Deletion requested by ${member?.name || 'Unknown'}`}
                 {log.action === 'delete_cancelled' && `Deletion cancelled by ${member?.name || 'Unknown'}`}
+                {log.action === 'delete_rejected' && `Deletion rejected by ${member?.name || 'Unknown'}`}
                 {log.action === 'deleted' && `Deleted by ${member?.name || 'Unknown'}`}
               </p>
               {log.details?.comment && (
