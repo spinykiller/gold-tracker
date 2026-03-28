@@ -15,6 +15,7 @@ export default function ItemForm({ memberId, editItem, editPhotos }) {
   const isEdit = !!editItem;
 
   const [name, setName] = useState('');
+  const [hasMetal, setHasMetal] = useState(false);
   const [metalType, setMetalType] = useState('gold');
   const [weightGrams, setWeightGrams] = useState('');
   const [purity, setPurity] = useState('');
@@ -29,6 +30,8 @@ export default function ItemForm({ memberId, editItem, editPhotos }) {
   useEffect(() => {
     if (!editItem) return;
     setName(editItem.name || '');
+    const hasMetalValue = editItem.metalType && editItem.metalType !== 'stones' && editItem.metalType !== 'others';
+    setHasMetal(hasMetalValue || editItem.metalType === 'others');
     setMetalType(editItem.metalType || 'gold');
     setWeightGrams(editItem.weightGrams != null ? String(editItem.weightGrams) : '');
     setPurity(editItem.purity || '');
@@ -71,6 +74,19 @@ export default function ItemForm({ memberId, editItem, editPhotos }) {
 
   const removeStone = (index) => setStones(stones.filter((_, i) => i !== index));
 
+  const addMetal = () => {
+    setHasMetal(true);
+    setMetalType('gold');
+  };
+
+  const removeMetal = () => {
+    setHasMetal(false);
+    setMetalType('gold');
+    setWeightGrams('');
+    setPurity('');
+    setMetalPrice('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -86,11 +102,11 @@ export default function ItemForm({ memberId, editItem, editPhotos }) {
 
     const itemData = {
       name: name.trim(),
-      metalType,
-      weightGrams: weightGrams ? parseFloat(weightGrams) : null,
-      purity: purity.trim() || null,
+      metalType: hasMetal ? metalType : (stones.length > 0 ? 'stones' : 'others'),
+      weightGrams: hasMetal && weightGrams ? parseFloat(weightGrams) : null,
+      purity: hasMetal ? (purity.trim() || null) : null,
       description: description.trim() || null,
-      metalPrice: metalPrice ? parseFloat(metalPrice) : null,
+      metalPrice: hasMetal && metalPrice ? parseFloat(metalPrice) : null,
       stones: stonesData,
     };
 
@@ -144,7 +160,7 @@ export default function ItemForm({ memberId, editItem, editPhotos }) {
     }
   };
 
-  const metalTypes = ['gold', 'silver', 'platinum'];
+  const metalTypes = ['gold', 'silver', 'platinum', 'others'];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -162,66 +178,98 @@ export default function ItemForm({ memberId, editItem, editPhotos }) {
         />
       </div>
 
+      {/* Metal Section */}
       <div>
-        <label className="block font-headline text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-4">Metal Type</label>
-        <div className="grid grid-cols-3 gap-2 p-1.5 bg-surface-container-low rounded-xl">
-          {metalTypes.map((mt) => (
+        <div className="flex items-center justify-between mb-4">
+          <label className="font-headline text-[10px] uppercase tracking-[0.2em] font-bold text-primary">Metal</label>
+          {!hasMetal && (
             <button
-              key={mt}
               type="button"
-              onClick={() => setMetalType(mt)}
-              className={`py-3 px-4 rounded-lg font-headline font-bold text-xs uppercase tracking-widest transition-all ${
-                metalType === mt
-                  ? 'bg-primary/10 text-primary border border-primary/20'
-                  : 'hover:bg-surface-container-high text-on-surface/60'
-              }`}
+              onClick={addMetal}
+              className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
             >
-              {mt}
+              <span className="material-symbols-outlined text-sm">add</span>
+              Add Metal
             </button>
-          ))}
+          )}
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-8">
-        <div>
-          <label className="block font-headline text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-3">Weight (Grams)</label>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.01"
-              value={weightGrams}
-              onChange={(e) => setWeightGrams(e.target.value)}
-              placeholder="0.00"
-              className="w-full bg-transparent border-b border-outline-variant py-4 text-xl font-headline placeholder:text-on-surface/20 focus:outline-none focus:border-primary transition-colors duration-300 pr-10"
-            />
-            <span className="absolute right-0 bottom-4 text-on-surface-variant font-headline text-sm font-bold">G</span>
+        {!hasMetal && (
+          <p className="text-on-surface-variant/40 text-sm text-center py-4 bg-surface-container-low rounded-xl">No metal added. Tap "Add Metal" if this item has metal.</p>
+        )}
+
+        {hasMetal && (
+          <div className="bg-surface-container-low rounded-xl p-5 border border-outline-variant/10 relative">
+            <button
+              type="button"
+              onClick={removeMetal}
+              className="absolute top-3 right-3 w-7 h-7 bg-error/10 rounded-full flex items-center justify-center hover:bg-error/20 transition-colors"
+            >
+              <span className="material-symbols-outlined text-error text-sm">close</span>
+            </button>
+
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">Metal Details</p>
+
+            <div className="flex flex-wrap gap-2 p-1 bg-surface-container-lowest rounded-lg mb-4">
+              {['gold', 'silver', 'platinum', 'others'].map((mt) => (
+                <button
+                  key={mt}
+                  type="button"
+                  onClick={() => setMetalType(mt)}
+                  className={`flex-1 min-w-[70px] py-2 px-2 rounded-md font-headline font-bold text-[10px] uppercase tracking-wider transition-all ${
+                    metalType === mt
+                      ? 'bg-primary/10 text-primary border border-primary/20'
+                      : 'hover:bg-surface-container-high text-on-surface/60'
+                  }`}
+                >
+                  {mt}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[9px] uppercase tracking-wider text-on-surface-variant mb-1 font-bold">Weight (Grams)</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={weightGrams}
+                    onChange={(e) => setWeightGrams(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-transparent border-b border-outline-variant py-2 text-sm font-headline placeholder:text-on-surface/20 focus:outline-none focus:border-primary transition-colors pr-8"
+                  />
+                  <span className="absolute right-0 bottom-2 text-on-surface-variant font-headline text-xs font-bold">G</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] uppercase tracking-wider text-on-surface-variant mb-1 font-bold">Purity</label>
+                <input
+                  type="text"
+                  value={purity}
+                  onChange={(e) => setPurity(e.target.value)}
+                  placeholder="24K / 999"
+                  className="w-full bg-transparent border-b border-outline-variant py-2 text-sm font-headline placeholder:text-on-surface/20 focus:outline-none focus:border-primary transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-[9px] uppercase tracking-wider text-on-surface-variant mb-1 font-bold">Metal Price (₹)</label>
+              <div className="relative">
+                <span className="absolute left-0 bottom-2 text-on-surface-variant font-headline text-xs font-bold">₹</span>
+                <input
+                  type="number"
+                  step="1"
+                  value={metalPrice}
+                  onChange={(e) => setMetalPrice(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-transparent border-b border-outline-variant py-2 text-sm font-headline placeholder:text-on-surface/20 focus:outline-none focus:border-primary transition-colors pl-5"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="block font-headline text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-3">Purity</label>
-          <input
-            type="text"
-            value={purity}
-            onChange={(e) => setPurity(e.target.value)}
-            placeholder="24K / 999"
-            className="w-full bg-transparent border-b border-outline-variant py-4 text-xl font-headline placeholder:text-on-surface/20 focus:outline-none focus:border-primary transition-colors duration-300"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block font-headline text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-3">Metal Price</label>
-        <div className="relative">
-          <span className="absolute left-0 bottom-4 text-on-surface-variant font-headline text-sm font-bold">₹</span>
-          <input
-            type="number"
-            step="1"
-            value={metalPrice}
-            onChange={(e) => setMetalPrice(e.target.value)}
-            placeholder="0"
-            className="w-full bg-transparent border-b border-outline-variant py-4 text-xl font-headline placeholder:text-on-surface/20 focus:outline-none focus:border-primary transition-colors duration-300 pl-6"
-          />
-        </div>
+        )}
       </div>
 
       {/* Stones Section */}

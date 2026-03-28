@@ -149,14 +149,54 @@ db.version(8).stores({
   });
 });
 
-export async function seedMembers() {
-  const count = await db.members.count();
-  if (count === 0) {
-    await db.members.bulkAdd([
-      { name: 'Dad', avatar: 'D' },
-      { name: 'Mom', avatar: 'M' },
-      { name: 'Me', avatar: 'Y', isAdmin: true },
-      { name: 'Wife', avatar: 'W' },
-    ]);
+// v9: app settings (configurable app name)
+db.version(9).stores({
+  members: '++id, name',
+  items: '++id, name, metalType, registeredBy, registeredAt, status',
+  itemPhotos: '++id, itemId',
+  deleteRequests: '++id, itemId, requestedBy, status',
+  schedules: '++id, frequency, nextDueAt',
+  reconciliations: '++id, startedAt, completedAt, status',
+  verifications: '++id, reconciliationId, itemId, verifiedBy, verifiedAt',
+  logs: '++id, itemId, action, performedBy, createdAt',
+  settings: 'key',
+});
+
+export const DEFAULT_APP_NAME = 'Aureum Heritage';
+
+export async function getAppName() {
+  const setting = await db.settings.get('appName');
+  return setting?.value || DEFAULT_APP_NAME;
+}
+
+export async function setAppName(name) {
+  await db.settings.put({ key: 'appName', value: name || DEFAULT_APP_NAME });
+}
+
+let seedPromise = null;
+export function seedMembers() {
+  if (!seedPromise) {
+    seedPromise = (async () => {
+      // Deduplicate members created by concurrent seed calls (React StrictMode)
+      const all = await db.members.toArray();
+      const seen = new Set();
+      const dupes = [];
+      for (const m of all) {
+        if (seen.has(m.name)) dupes.push(m.id);
+        else seen.add(m.name);
+      }
+      if (dupes.length) await db.members.bulkDelete(dupes);
+
+      const count = await db.members.count();
+      if (count === 0) {
+        await db.members.bulkAdd([
+          { name: 'Dad', avatar: 'D' },
+          { name: 'Mom', avatar: 'M' },
+          { name: 'Me', avatar: 'Y', isAdmin: true },
+          { name: 'Wife', avatar: 'W' },
+        ]);
+      }
+    })();
   }
+  return seedPromise;
 }

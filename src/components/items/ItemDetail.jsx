@@ -193,7 +193,16 @@ export default function ItemDetail({ memberId }) {
         </div>
         <h1 className="text-4xl font-headline font-extrabold text-on-background tracking-tighter mb-2">{item.name}</h1>
         <p className="text-primary-fixed-dim text-lg font-headline font-semibold">
-          {item.weightGrams ? `${item.weightGrams}g` : ''} {item.purity ? `\u2022 ${item.purity}` : ''} {item.metalType ? `${item.metalType.charAt(0).toUpperCase() + item.metalType.slice(1)}` : ''}
+          {item.metalType === 'stones' ? (
+            <>
+              {(item.stones || []).length} {((item.stones || []).length === 1) ? 'stone' : 'stones'}
+              {item.stones?.reduce((s, st) => s + (st.weightCarat || 0), 0) > 0 && ` \u2022 ${item.stones.reduce((s, st) => s + (st.weightCarat || 0), 0).toFixed(2)} ct`}
+            </>
+          ) : (
+            <>
+              {item.weightGrams ? `${item.weightGrams}g` : ''} {item.purity ? `\u2022 ${item.purity}` : ''} {item.metalType ? `${item.metalType.charAt(0).toUpperCase() + item.metalType.slice(1)}` : ''}
+            </>
+          )}
         </p>
       </section>
 

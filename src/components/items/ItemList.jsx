@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/db';
 import ItemCard from './ItemCard';
 
-const filters = ['all', 'gold', 'silver', 'platinum', 'other'];
+const filters = ['all', 'gold', 'silver', 'platinum', 'stones', 'others'];
 
 export default function ItemList() {
   const [search, setSearch] = useState('');

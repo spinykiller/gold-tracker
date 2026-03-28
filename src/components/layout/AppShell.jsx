@@ -1,10 +1,12 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
 import MemberAvatar from '../common/MemberAvatar';
+import { useAppName } from '../../hooks/useAppName';
 
 export default function AppShell({ currentMember, onLogout }) {
   const location = useLocation();
   const isDetail = location.pathname.includes('/items/');
+  const appName = useAppName();
 
   return (
     <div className="min-h-screen pb-32">
@@ -13,7 +15,7 @@ export default function AppShell({ currentMember, onLogout }) {
           <MemberAvatar member={currentMember} size={32} className="border border-primary-container/30" />
           <span className="font-[Manrope] font-semibold tracking-tight text-lg text-on-surface/80">{currentMember?.name || ''}</span>
         </div>
-        <div className="text-xl font-bold tracking-[0.1em] text-primary-container uppercase font-headline">Aureum Heritage</div>
+        <div className="text-xl font-bold tracking-[0.1em] text-primary-container uppercase font-headline">{appName}</div>
         <button onClick={onLogout} className="p-2 hover:bg-surface-container-high transition-colors duration-300 rounded-full cursor-pointer" title="Switch profile">
           <span className="material-symbols-outlined text-primary-container">logout</span>
         </button>

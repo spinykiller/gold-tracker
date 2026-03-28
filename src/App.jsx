@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { seedMembers, db } from './lib/db';
+import { seedMembers, db, DEFAULT_APP_NAME } from './lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCurrentMember } from './hooks/useCurrentMember';
 import AppShell from './components/layout/AppShell';
@@ -21,9 +21,18 @@ export default function App() {
     [memberId]
   );
 
+  const appNameSetting = useLiveQuery(
+    () => db.settings.get('appName'),
+    []
+  );
+
   useEffect(() => {
     seedMembers().then(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    document.title = appNameSetting?.value || DEFAULT_APP_NAME;
+  }, [appNameSetting]);
 
   if (!ready) return null;
 

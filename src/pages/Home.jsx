@@ -18,6 +18,7 @@ export default function Home({ memberId }) {
   const goldWeight = activeItems.filter((i) => i.metalType === 'gold').reduce((s, i) => s + (i.weightGrams || 0), 0);
   const silverWeight = activeItems.filter((i) => i.metalType === 'silver').reduce((s, i) => s + (i.weightGrams || 0), 0);
   const platinumWeight = activeItems.filter((i) => i.metalType === 'platinum').reduce((s, i) => s + (i.weightGrams || 0), 0);
+  const stoneOnlyItems = activeItems.filter((i) => i.metalType === 'stones');
 
   // Aggregate stones across all active items
   const allStones = activeItems.flatMap((i) => i.stones || []);
@@ -89,7 +90,7 @@ export default function Home({ memberId }) {
               </div>
             </div>
           </div>
-          {(diamondStones.length > 0 || preciousStones.length > 0 || semiPreciousStones.length > 0 || artificialStones.length > 0) && (
+          {(diamondStones.length > 0 || preciousStones.length > 0 || semiPreciousStones.length > 0 || artificialStones.length > 0 || stoneOnlyItems.length > 0) && (
             <div className="grid grid-cols-2 gap-3 mt-4">
               <div className="bg-surface-container-highest/30 backdrop-blur-sm rounded-xl p-3 border border-white/5">
                 <p className="text-[9px] uppercase tracking-wider text-on-surface-variant mb-1">Diamonds</p>
@@ -123,6 +124,15 @@ export default function Home({ memberId }) {
                 </div>
                 {artificialCarats > 0 && <p className="text-[10px] text-on-surface-variant mt-0.5">{artificialCarats.toFixed(2)} ct</p>}
               </div>
+              {stoneOnlyItems.length > 0 && (
+                <div className="bg-purple-500/10 backdrop-blur-sm rounded-xl p-3 border border-purple-500/10 col-span-2">
+                  <p className="text-[9px] uppercase tracking-wider text-purple-400 mb-1">Stone-Only Items</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-bold font-headline text-on-surface">{stoneOnlyItems.length}</span>
+                    <span className="text-[10px] text-on-surface-variant">items</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">

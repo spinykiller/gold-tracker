@@ -23,7 +23,7 @@ export async function registerBiometric(memberId, memberName) {
   const credential = await navigator.credentials.create({
     publicKey: {
       challenge,
-      rp: { name: 'Aureum Heritage', id: location.hostname },
+      rp: { name: document.title || 'Aureum Heritage', id: location.hostname },
       user: {
         id: new TextEncoder().encode(String(memberId)),
         name: memberName,

@@ -5,28 +5,50 @@ import { db } from '../../lib/db';
 import { blobToUrl } from '../../lib/photos';
 import Badge from '../common/Badge';
 
+import { useRef } from 'react';
+
 export default function ItemCard({ item }) {
   const [thumbUrl, setThumbUrl] = useState(null);
+  const urlRef = useRef(null);
   const firstPhoto = useLiveQuery(
     () => db.itemPhotos.where('itemId').equals(item.id).first(),
     [item.id]
   );
 
   useEffect(() => {
+    // Revoke old URL before creating new one
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+
     const blob = firstPhoto?.thumb || firstPhoto?.photo;
     if (blob) {
       const url = blobToUrl(blob);
+      urlRef.current = url;
       setThumbUrl(url);
-      return () => URL.revokeObjectURL(url);
+    } else {
+      setThumbUrl(null);
     }
-    setThumbUrl(null);
-  }, [firstPhoto]);
+
+    return () => {
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+    };
+  }, [firstPhoto?.id, firstPhoto?.photo, firstPhoto?.thumb]);
 
   const weightColor = {
     gold: 'text-primary-fixed-dim',
     silver: 'text-secondary',
     platinum: 'text-tertiary',
+    stones: 'text-purple-400',
+    others: 'text-on-surface',
   };
+
+  const totalCarats = (item.stones || []).reduce((s, st) => s + (st.weightCarat || 0), 0);
+  const stoneCount = (item.stones || []).length;
 
   return (
     <Link
@@ -52,11 +74,17 @@ export default function ItemCard({ item }) {
             {item.status || 'active'}
           </p>
         </div>
-        {item.weightGrams && (
+        {item.metalType === 'stones' ? (
+          stoneCount > 0 && (
+            <span className={`${weightColor[item.metalType] || 'text-purple-400'} font-headline font-bold text-xl`}>
+              {stoneCount} {stoneCount === 1 ? 'stone' : 'stones'}
+            </span>
+          )
+        ) : item.weightGrams ? (
           <span className={`${weightColor[item.metalType] || 'text-primary-fixed-dim'} font-headline font-bold text-xl`}>
             {item.weightGrams}g
           </span>
-        )}
+        ) : null}
       </div>
     </Link>
   );

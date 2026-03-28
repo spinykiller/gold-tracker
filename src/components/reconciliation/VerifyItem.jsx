@@ -69,7 +69,16 @@ export default function VerifyItem({ item, reconId, memberId }) {
           <div>
             <h3 className="font-headline font-bold text-2xl text-on-surface">{item.name}</h3>
             <p className="text-on-surface-variant text-sm font-medium">
-              {item.weightGrams ? `${item.weightGrams}g` : ''} {item.purity || ''} {item.metalType}
+              {item.metalType === 'stones' ? (
+                <>
+                  {(item.stones || []).length} {((item.stones || []).length === 1) ? 'stone' : 'stones'}
+                  {item.stones?.reduce((s, st) => s + (st.weightCarat || 0), 0) > 0 && ` \u2022 ${item.stones.reduce((s, st) => s + (st.weightCarat || 0), 0).toFixed(2)} ct`}
+                </>
+              ) : (
+                <>
+                  {item.weightGrams ? `${item.weightGrams}g` : ''} {item.purity || ''} {item.metalType}
+                </>
+              )}
             </p>
           </div>
           <Badge type={item.metalType} />

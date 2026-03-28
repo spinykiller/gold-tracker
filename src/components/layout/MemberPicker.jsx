@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/db';
 import MemberAvatar from '../common/MemberAvatar';
 import { verifyPin, isBiometricAvailable, authenticateBiometric } from '../../lib/auth';
+import { useAppName } from '../../hooks/useAppName';
 
 const avatarColors = ['#D4AF37', '#C6C6C6', '#E9C349', '#B3B3B1'];
 
@@ -12,6 +13,7 @@ export default function MemberPicker({ onSelect }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [hasBiometric, setHasBiometric] = useState(false);
+  const appName = useAppName();
 
   useEffect(() => {
     isBiometricAvailable().then(setHasBiometric);
@@ -167,7 +169,7 @@ export default function MemberPicker({ onSelect }) {
         <div className="mt-20 flex flex-col items-center gap-4">
           <div className="flex items-center gap-2 text-on-surface-variant/40">
             <span className="material-symbols-outlined text-sm">fingerprint</span>
-            <span className="text-xs uppercase tracking-[0.3em] font-medium">Secured by Aureum Protocol</span>
+            <span className="text-xs uppercase tracking-[0.3em] font-medium">Secured by {appName} Protocol</span>
           </div>
         </div>
       </main>
