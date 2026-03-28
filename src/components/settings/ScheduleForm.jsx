@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../lib/db';
 
@@ -7,6 +7,13 @@ const frequencies = ['weekly', 'monthly', 'quarterly', 'yearly'];
 export default function ScheduleForm({ memberId }) {
   const schedule = useLiveQuery(() => db.schedules.toCollection().first());
   const [freq, setFreq] = useState('monthly');
+
+  // Initialize freq from saved schedule when it loads
+  useEffect(() => {
+    if (schedule?.frequency) {
+      setFreq(schedule.frequency);
+    }
+  }, [schedule]);
 
   const handleSave = async () => {
     const next = new Date();
@@ -34,23 +41,39 @@ export default function ScheduleForm({ memberId }) {
       <p className="text-on-surface-variant text-sm mb-8">Set how often items should be verified.</p>
 
       <div className="space-y-4">
-        {frequencies.map((f) => (
-          <button
-            key={f}
-            onClick={() => { setFreq(f); }}
-            className={`w-full flex items-center justify-between p-4 rounded-lg transition-all ${
-              (schedule?.frequency || freq) === f
-                ? 'bg-primary/10 border border-primary/20'
-                : 'bg-surface-container-highest/30 border border-outline-variant/15 hover:bg-surface-container-high'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary">calendar_month</span>
-              <span className="font-medium capitalize">{f} Audit</span>
-            </div>
-            <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
-          </button>
-        ))}
+        {frequencies.map((f) => {
+          const isActive = schedule?.frequency === f;
+          const isPending = freq === f && !isActive;
+          return (
+            <button
+              key={f}
+              onClick={() => { setFreq(f); }}
+              className={`w-full flex items-center justify-between p-4 rounded-lg transition-all ${
+                isActive
+                  ? 'bg-primary/10 border border-primary/20'
+                  : isPending
+                    ? 'bg-primary-container/10 border border-primary-container/30'
+                    : 'bg-surface-container-highest/30 border border-outline-variant/15 hover:bg-surface-container-high'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className={`material-symbols-outlined ${isActive ? 'text-primary' : isPending ? 'text-primary-container' : 'text-on-surface-variant'}`}>
+                  {isActive ? 'check_circle' : 'calendar_month'}
+                </span>
+                <span className="font-medium capitalize">{f} Audit</span>
+              </div>
+              {isActive && (
+                <span className="text-[10px] font-bold tracking-widest uppercase text-primary bg-primary/10 px-2 py-1 rounded-full">Active</span>
+              )}
+              {isPending && (
+                <span className="text-[10px] font-bold tracking-widest uppercase text-primary-container bg-primary-container/10 px-2 py-1 rounded-full">Selected</span>
+              )}
+              {!isActive && !isPending && (
+                <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+              )}
+            </button>
+          );
+        })}
         <button
           onClick={handleSave}
           className="w-full mt-4 bg-primary text-on-primary font-headline font-bold py-3 rounded-lg active:scale-95 transition-all"
