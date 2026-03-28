@@ -116,22 +116,24 @@ export default function MemberManager({ currentMemberId }) {
     <div className="bg-surface-container-low rounded-xl p-8">
       <div className="flex justify-between items-center mb-10">
         <h3 className="font-headline text-2xl font-bold">Family Members</h3>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Name"
-            className="bg-surface-container-high border-none rounded-lg px-3 py-2 text-sm text-on-surface placeholder:text-on-surface/30 focus:outline-none focus:ring-1 focus:ring-primary/30 w-24"
-            onKeyDown={(e) => e.key === 'Enter' && addMember()}
-          />
-          <button
-            onClick={addMember}
-            className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary/20 transition-all"
-          >
-            Add
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Name"
+              className="bg-surface-container-high border-none rounded-lg px-3 py-2 text-sm text-on-surface placeholder:text-on-surface/30 focus:outline-none focus:ring-1 focus:ring-primary/30 w-24"
+              onKeyDown={(e) => e.key === 'Enter' && addMember()}
+            />
+            <button
+              onClick={addMember}
+              className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-primary/20 transition-all"
+            >
+              Add
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
